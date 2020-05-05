@@ -1,19 +1,34 @@
 package com.example.petproject;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.PersistableBundle;
-import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.OnMapReadyCallback;
+import com.example.petproject.ui.login.LoginActivity;
+import com.facebook.CallbackManager;
+import com.facebook.login.LoginManager;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -22,19 +37,47 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-public class NavigationMenu extends AppCompatActivity implements OnMapReadyCallback {
+public class NavigationMenu extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
-    private AppBarConfiguration mAppBarConfiguration;
-    private GoogleMap mGoogleMap;
-    private MapView mapView;
+    AppBarConfiguration mAppBarConfiguration;
+    Toolbar toolbar;
+    FloatingActionButton fab;
+    GoogleSignInClient signInClient;
+    CallbackManager callbackManager;
+    TextView hUserName;
+    FirebaseFirestore db;
+    FirebaseAuth auth;
+    String userID;
+    View hview;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation_menu);
-        Toolbar toolbar = findViewById(R.id.toolbar);
+
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        FloatingActionButton fab = findViewById(R.id.fab);
+        fab = findViewById(R.id.fab);
+        callbackManager = CallbackManager.Factory.create();
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        userID = auth.getCurrentUser().getUid();
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        hview = navigationView.getHeaderView(0);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        hUserName = hview.findViewById(R.id.header_username);
+
+        DocumentReference documentReference = db.collection("users").document(userID);
+        documentReference.addSnapshotListener(this, new EventListener<DocumentSnapshot>() {
+            @Override
+            public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
+                hUserName.setText("Hi " + documentSnapshot.getString("username") + "!");
+            }
+        });
+
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -42,8 +85,12 @@ public class NavigationMenu extends AppCompatActivity implements OnMapReadyCallb
                         .setAction("Action", null).show();
             }
         });
+
+
+
+
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
@@ -54,9 +101,16 @@ public class NavigationMenu extends AppCompatActivity implements OnMapReadyCallb
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
 
-        mapView = findViewById(R.id.mapView2);
-        mapView.onCreate(savedInstanceState);
-        mapView.getMapAsync(this);
+        GoogleSignInOptions signInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        signInClient = GoogleSignIn.getClient(this, signInOptions);
+
+    }
+
+    public void basicLogout() {
+        FirebaseAuth.getInstance().signOut();
+        updateUI(LoginActivity.class);
     }
 
     @Override
@@ -67,6 +121,32 @@ public class NavigationMenu extends AppCompatActivity implements OnMapReadyCallb
     }
 
     @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        if(item.getItemId() == R.id.nav_logout) {
+            basicLogout();
+            googleLogOut();
+            facebookLogOut();
+        }
+        return true;
+    }
+
+    private void facebookLogOut() {
+        LoginManager.getInstance().logOut();
+        updateUI(LoginActivity.class);
+    }
+
+    private void googleLogOut() {
+        signInClient.signOut()
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        Toast.makeText(NavigationMenu.this, "Signed out succesfully!", Toast.LENGTH_LONG).show();
+                        updateUI(LoginActivity.class);
+                    }
+                });
+    }
+
+    @Override
     public boolean onSupportNavigateUp() {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         return NavigationUI.navigateUp(navController, mAppBarConfiguration)
@@ -74,49 +154,44 @@ public class NavigationMenu extends AppCompatActivity implements OnMapReadyCallb
     }
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
-        Log.d("Info", "onMapReady: map is showing on the screen");
-    }
-
-    @Override
     protected void onStart() {
         super.onStart();
-        mapView.onStart();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mapView.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mapView.onResume();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mapView.onStop();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mapView.onDestroy();
     }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
         super.onSaveInstanceState(outState, outPersistentState);
-        mapView.onSaveInstanceState(outState);
     }
 
     @Override
     public void onLowMemory() {
         super.onLowMemory();
-        mapView.onLowMemory();
     }
+
+    private void updateUI(Class<?> Class) {
+        Intent registerIntent = new Intent(NavigationMenu.this, Class);
+        startActivity(registerIntent);
+    }
+
+
 }

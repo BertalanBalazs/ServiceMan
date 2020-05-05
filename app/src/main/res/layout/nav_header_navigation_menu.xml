@@ -16,8 +16,8 @@
         android:id="@+id/imageView"
         android:layout_width="65dp"
         android:layout_height="79dp"
-        app:srcCompat="@drawable/animal"
-        android:contentDescription="TODO" />
+        android:contentDescription="TODO"
+        app:srcCompat="@drawable/mechanic" />
 
     <TextView
         android:layout_width="148dp"
@@ -27,9 +27,8 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/header_username"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/nav_header_subtitle" />
+        android:layout_height="wrap_content" />
 
 </LinearLayout>
