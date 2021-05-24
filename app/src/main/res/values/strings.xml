@@ -35,6 +35,7 @@
 
     <string name="prefLoginState">Loginstatus</string>
     <string name="logout">Logout</string>
+    <string name="eventData">TextView</string>
 
 
 </resources>

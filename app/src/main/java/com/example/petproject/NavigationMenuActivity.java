@@ -27,6 +27,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.navigation.NavController;
@@ -37,7 +38,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-public class NavigationMenu extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class NavigationMenuActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     AppBarConfiguration mAppBarConfiguration;
     Toolbar toolbar;
@@ -87,8 +88,6 @@ public class NavigationMenu extends AppCompatActivity implements NavigationView.
         });
 
 
-
-
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         navigationView.setNavigationItemSelectedListener(this);
         // Passing each menu ID as a set of Ids because each
@@ -125,22 +124,17 @@ public class NavigationMenu extends AppCompatActivity implements NavigationView.
         if(item.getItemId() == R.id.nav_logout) {
             basicLogout();
             googleLogOut();
-            facebookLogOut();
         }
         return true;
     }
 
-    private void facebookLogOut() {
-        LoginManager.getInstance().logOut();
-        updateUI(LoginActivity.class);
-    }
 
     private void googleLogOut() {
         signInClient.signOut()
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
-                        Toast.makeText(NavigationMenu.this, "Signed out succesfully!", Toast.LENGTH_LONG).show();
+                        Toast.makeText(NavigationMenuActivity.this, "Signed out succesfully!", Toast.LENGTH_LONG).show();
                         updateUI(LoginActivity.class);
                     }
                 });
@@ -189,7 +183,7 @@ public class NavigationMenu extends AppCompatActivity implements NavigationView.
     }
 
     private void updateUI(Class<?> Class) {
-        Intent registerIntent = new Intent(NavigationMenu.this, Class);
+        Intent registerIntent = new Intent(NavigationMenuActivity.this, Class);
         startActivity(registerIntent);
     }
 
